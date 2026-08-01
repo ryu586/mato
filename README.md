@@ -18,6 +18,16 @@ Paper 1.21.4向けに作成した、FPS風エイム練習用プラグインで�
 * プレイヤー参加時に武器を自動配布
 * クワ本来の耕作・攻撃動作を無効化
 
+## 推奨設定
+
+より良い体験のため、専用リソースパックを **server.properties** の `resource-pack` に設定することを推奨します。
+
+```properties
+resource-pack=https://drive.google.com/uc?export=download&id=1VX1yLgIKtdOthRoXkO1N96lOxRsbHpf6
+```
+
+> **※設定しなくてもプラグインは動作しますが、木のクワは銃の見た目ではなく通常の木のクワとして表示されます。**
+
 ## 操作方法
 
 | 操作        | 内容           |
@@ -42,4 +52,3 @@ Paper 1.21.4向けに作成した、FPS風エイム練習用プラグインで�
 * Java 21
 
 ※このプラグインは個人制作・学習目的で開発したものです。
-
