@@ -44,17 +44,18 @@ resource-pack=https://drive.google.com/uc?export=download&id=1VX1yLgIKtdOthRoXkO
 * ターゲット撃破でレベルアップ
 * HPはレベルに応じて増加
 * Lv50以降はターゲットの移動速度も上昇
+* ターゲットのレベルが上がると数秒間ターゲットが消えます
 
 
 ## ターゲット管理機能
 
-*/spawn target
+* /spawn target
 
 プレイヤーの位置にエイム練習用ターゲットを生成します。
-*/delete target
+* /delete target
 
 現在存在しているターゲットを削除します。
-*ターゲットは一つしか出せません
+* ターゲットは一つしか出せません
 
 ## 動作環境
 
