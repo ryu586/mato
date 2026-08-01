@@ -45,6 +45,17 @@ resource-pack=https://drive.google.com/uc?export=download&id=1VX1yLgIKtdOthRoXkO
 * HPはレベルに応じて増加
 * Lv50以降はターゲットの移動速度も上昇
 
+
+## ターゲット管理機能
+
+*/spawn target
+
+プレイヤーの位置にエイム練習用ターゲットを生成します。
+*/delete target
+
+現在存在しているターゲットを削除します。
+*ターゲットは一つしか出せません
+
 ## 動作環境
 
 * Minecraft Java Edition 1.21.4
