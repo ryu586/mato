@@ -63,4 +63,7 @@ resource-pack=https://drive.google.com/uc?export=download&id=1VX1yLgIKtdOthRoXkO
 * Paper 1.21.4
 * Java 21
 
+## プレイ動画
+https://youtu.be/kxJ1gUecgjI
+
 ※このプラグインは個人制作・学習目的で開発したものです。
