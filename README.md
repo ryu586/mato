@@ -23,7 +23,7 @@ Paper 1.21.4向けに作成した、FPS風エイム練習用プラグインで�
 より良い体験のため、専用リソースパックを **server.properties** の `resource-pack` に設定することを推奨します。
 
 ```properties
-resource-pack=https://drive.google.com/uc?export=download&id=1VX1yLgIKtdOthRoXkO1N96lOxRsbHpf6
+https://drive.google.com/uc?export=download&id=12kbiYQoDAPbPXDim1RCfHxDmeO6khDdl
 ```
 
 > **※設定しなくてもプラグインは動作しますが、木のクワは銃の見た目ではなく通常の木のクワとして表示されます。**
