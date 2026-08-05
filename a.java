@@ -110,7 +110,7 @@ public final class A extends JavaPlugin implements Listener, CommandExecutor {
         new BukkitRunnable() {
             @Override
             public void run() {
-                if (!targetAlive) return;
+                //if (!targetAlive) return;
 
                 for (UUID id : new HashSet<>(firing.keySet())) {
 
@@ -143,6 +143,8 @@ public final class A extends JavaPlugin implements Listener, CommandExecutor {
         }.runTaskTimer(this, 0L, 1L);
 
         getCommand("lv").setExecutor(this);
+        getCommand("spawn").setExecutor(this);
+        getCommand("delete").setExecutor(this);
 
         new BukkitRunnable() {
             @Override
@@ -466,14 +468,14 @@ public final class A extends JavaPlugin implements Listener, CommandExecutor {
     // =====================================================
 // TARGET
 // =====================================================
-    private void spawnTarget(World world) {
+    private void spawnTarget(Location loc) {
 
-        spawn = new Location(world, 0, -58, 0);
+        spawn = loc.clone();
 
-        display = world.spawn(spawn, BlockDisplay.class);
+        display = spawn.getWorld().spawn(spawn, BlockDisplay.class);
         display.setBlock(Material.TARGET.createBlockData());
 
-        hitbox = world.spawn(spawn, Shulker.class, s -> {
+        hitbox = spawn.getWorld().spawn(spawn, Shulker.class, s -> {
             s.setAI(false);
             s.setInvisible(true);
             s.setInvulnerable(true);
@@ -481,7 +483,7 @@ public final class A extends JavaPlugin implements Listener, CommandExecutor {
             s.setGravity(false);
         });
 
-        hpDisplay = world.spawn(
+        hpDisplay = spawn.getWorld().spawn(
                 spawn.clone().add(0, 1.8, 0),
                 TextDisplay.class
         );
@@ -493,7 +495,6 @@ public final class A extends JavaPlugin implements Listener, CommandExecutor {
         targetAlive = true;
         targetHp = targetMaxHp;
         displayHp = targetHp;
-        targetAlive = true;
 
         updateHpDisplay();
     }
@@ -517,9 +518,12 @@ public final class A extends JavaPlugin implements Listener, CommandExecutor {
     @EventHandler
     public void onHit(ProjectileHitEvent e) {
 
-        if (!targetAlive || display == null) return;
-
         if (!(e.getEntity() instanceof Arrow arrow)) return;
+
+        // 着弾したら必ず削除
+        arrow.remove();
+
+        if (!targetAlive || display == null) return;
         if (e.getHitEntity() != hitbox) return;
 
         Player p = (Player) arrow.getShooter();
@@ -541,9 +545,6 @@ public final class A extends JavaPlugin implements Listener, CommandExecutor {
         display.getWorld().spawnParticle(Particle.ELECTRIC_SPARK,
                 display.getLocation(), 5, 0.08, 0.08, 0.08, 0.01);
 
-        arrow.remove();
-
-        // HPが0になったら破壊
         if (targetHp <= 0 && targetAlive) {
 
             removeTarget();
@@ -556,6 +557,9 @@ public final class A extends JavaPlugin implements Listener, CommandExecutor {
                 moveSpeed += 0.003;
             }
 
+            Bukkit.getScheduler().runTaskLater(this, () -> {
+                spawnTarget(spawn);
+            }, 20L);
         }
 
         updateUI(p);
@@ -606,82 +610,95 @@ public final class A extends JavaPlugin implements Listener, CommandExecutor {
 
     }
 
-    @EventHandler
-    public void onSpawn(EntitySpawnEvent e) {
 
-        if (targetAlive) return;
-
-        if (!(e.getEntity() instanceof Shulker shulker)) return;
-
-        if (shulker.getEntitySpawnReason() != CreatureSpawnEvent.SpawnReason.SPAWNER_EGG)
-            return;
-
-        hitbox = shulker;
-        spawn = shulker.getLocation();
-
-        shulker.setAI(false);
-        shulker.setInvisible(true);
-        shulker.setInvulnerable(true);
-        shulker.setSilent(true);
-        shulker.setGravity(false);
-
-        display = world.spawn(spawn, BlockDisplay.class);
-        display.setBlock(Material.TARGET.createBlockData());
-
-        hpDisplay = world.spawn(
-                spawn.clone().add(0, 1.8, 0),
-                TextDisplay.class
-        );
-
-        hpDisplay.setBillboard(Display.Billboard.CENTER);
-        hpDisplay.setSeeThrough(false);
-        hpDisplay.setShadowed(true);
-
-        targetHp = targetMaxHp;
-        displayHp = targetHp;
-        targetAlive = true;
-
-        updateHpDisplay();
-    }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 
-        if (!command.getName().equalsIgnoreCase("lv")) return true;
+        if (command.getName().equalsIgnoreCase("delete")) {
 
-        if (args.length != 1) {
-            sender.sendMessage("§c使い方: /lv <数字>");
+            if (args.length == 1 && args[0].equalsIgnoreCase("target")) {
+
+                if (!targetAlive) {
+                    sender.sendMessage("§c的がありません");
+                    return true;
+                }
+
+                removeTarget();
+
+                sender.sendMessage("§a的を削除しました");
+                return true;
+            }
+
+            sender.sendMessage("§c使い方: /delete target");
             return true;
         }
 
-        int lv;
+        if (command.getName().equalsIgnoreCase("spawn")) {
 
-        try {
-            lv = Integer.parseInt(args[0]);
-        } catch (NumberFormatException e) {
-            sender.sendMessage("§c数字を入力してください。");
+            if (!(sender instanceof Player p)) {
+                sender.sendMessage("プレイヤーのみ使用できます");
+                return true;
+            }
+
+            if (args.length == 1 && args[0].equalsIgnoreCase("target")) {
+
+                if (targetAlive) {
+                    p.sendMessage("§cすでに的があります");
+                    return true;
+                }
+
+                spawnTarget(p.getLocation());
+
+                p.sendMessage("§a的をスポーンしました");
+                return true;
+            }
+
+            p.sendMessage("§c使い方: /spawn target");
             return true;
         }
 
-        if (lv < 1) lv = 1;
 
-        targetLevel = lv;
-        targetMaxHp = 10 + (targetLevel - 1) / 2;
-        targetHp = targetMaxHp;
-        displayHp = targetHp;
+        if (command.getName().equalsIgnoreCase("lv")) {
 
-        if (targetLevel < 50) {
-            moveSpeed = 0.15;
-        } else {
-            moveSpeed = 0.15 + (targetLevel - 50) * 0.003;
+            if (args.length != 1) {
+                sender.sendMessage("§c使い方: /lv <数字>");
+                return true;
+            }
+
+            int lv;
+
+            try {
+                lv = Integer.parseInt(args[0]);
+            } catch (NumberFormatException e) {
+                sender.sendMessage("§c数字を入力してください");
+                return true;
+            }
+
+            if (lv < 1) lv = 1;
+
+            targetLevel = lv;
+            targetMaxHp = 10 + (targetLevel - 1) / 2;
+            targetHp = targetMaxHp;
+            displayHp = targetHp;
+
+
+            if (targetLevel < 50) {
+                moveSpeed = 0.15;
+            } else {
+                moveSpeed = 0.15 + (targetLevel - 50) * 0.003;
+            }
+
+            updateHpDisplay();
+
+            sender.sendMessage(
+                    "§aTarget LVを §e" + targetLevel + "§a に設定しました。"
+            );
+
+            return true;
         }
 
-        updateHpDisplay();
-
-        sender.sendMessage("§aTarget LVを §e" + targetLevel + "§a に設定しました。");
-
-        return true;
-
+        return false;
     }
 
 }
