@@ -1,0 +1,17 @@
+name: a
+version: '1.0-SNAPSHOT'
+main: org.fc.a.A
+api-version: '1.21'
+
+commands:
+  lv:
+    description: Set target level
+    usage: /lv <level>
+
+  spawn:
+    description: Spawn target
+    usage: /spawn target
+
+  delete:
+    description: Delete target
+    usage: /delete target
