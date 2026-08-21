@@ -6,12 +6,15 @@ api-version: '1.21'
 commands:
   lv:
     description: Set target level
-    usage: /lv <level>
 
   spawn:
     description: Spawn target
-    usage: /spawn target
 
   delete:
     description: Delete target
-    usage: /delete target
+
+  move:
+    description: Change target movement pattern
+
+  mode:
+    description: Change game mode
