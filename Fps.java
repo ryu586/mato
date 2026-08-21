@@ -1,5 +1,7 @@
 package org.fc.a;
 
+import org.bukkit.command.TabCompleter;
+
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.*;
@@ -25,7 +27,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
 
-public final class A extends JavaPlugin implements Listener, CommandExecutor {
+public final class A extends JavaPlugin implements Listener, CommandExecutor, TabCompleter {
 
     // ===== Target =====
     private BlockDisplay display;
@@ -52,7 +54,11 @@ public final class A extends JavaPlugin implements Listener, CommandExecutor {
     private int targetHp = targetMaxHp;
 
     private double moveSpeed = 0.15;
+    private String movePattern = "left_right";
 
+    private String gameMode = "classic";
+    private int timeRemaining = 60;
+    private boolean gameRunning = true;
 
     private TextDisplay hpDisplay;
 
@@ -86,7 +92,45 @@ public final class A extends JavaPlugin implements Listener, CommandExecutor {
         Bukkit.getPluginManager().registerEvents(this, this);
         world = Bukkit.getWorlds().get(0);
 
-        //spawnTarget(world);
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+
+                if (!gameRunning) return;
+                if (!gameMode.equals("time")) return;
+
+                timeRemaining--;
+
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    updateUI(p);
+                }
+
+                if (timeRemaining <= 0) {
+
+                    gameRunning = false;
+
+                    for (Player p : Bukkit.getOnlinePlayers()) {
+
+                        p.sendTitle(
+                                "§cTIME UP",
+                                "§eScore: " + score.getOrDefault(
+                                        p.getUniqueId(), 0
+                                ),
+                                10,
+                                40,
+                                10
+                        );
+
+                        p.playSound(
+                                p.getLocation(),
+                                Sound.BLOCK_NOTE_BLOCK_BASS,
+                                1f,
+                                0.5f
+                        );
+                    }
+                }
+            }
+        }.runTaskTimer(this, 20L, 20L);
 
         // ===== Target Move =====
         new BukkitRunnable() {
@@ -98,11 +142,40 @@ public final class A extends JavaPlugin implements Listener, CommandExecutor {
 
                 t += moveSpeed;
 
+                double x = spawn.getX();
+                double y = spawn.getY();
+                double z = spawn.getZ();
+
+                switch (movePattern) {
+
+                    case "left_right":
+                        x += Math.sin(t) * 4.0;
+                        break;
+
+                    case "up_down":
+                        y += Math.sin(t) * 2.0;
+                        break;
+
+                    case "circle":
+                        x += Math.cos(t) * 3.0;
+                        y += Math.sin(t) * 3.0;
+                        break;
+
+                    case "random":
+                        x += Math.sin(t * 1.7) * 3.0;
+                        y += Math.sin(t * 2.3) * 1.5;
+                        z += Math.cos(t * 1.3) * 2.0;
+                        break;
+
+                    case "stop":
+                        break;
+                }
+
                 Location loc = new Location(
                         world,
-                        spawn.getX() + Math.sin(t) * 4.0,
-                        spawn.getY(),
-                        spawn.getZ()
+                        x,
+                        y,
+                        z
                 );
 
                 if (display != null && hitbox != null) {
@@ -155,6 +228,14 @@ public final class A extends JavaPlugin implements Listener, CommandExecutor {
         getCommand("lv").setExecutor(this);
         getCommand("spawn").setExecutor(this);
         getCommand("delete").setExecutor(this);
+        getCommand("move").setExecutor(this);
+        getCommand("mode").setExecutor(this);
+
+        getCommand("lv").setTabCompleter(this);
+        getCommand("spawn").setTabCompleter(this);
+        getCommand("delete").setTabCompleter(this);
+        getCommand("move").setTabCompleter(this);
+        getCommand("mode").setTabCompleter(this);
 
         new BukkitRunnable() {
             @Override
@@ -382,7 +463,10 @@ public final class A extends JavaPlugin implements Listener, CommandExecutor {
 // =====================================================
     private void shoot(Player p) {
 
+        if (!gameRunning) return;
+
         UUID id = p.getUniqueId();
+
 
         int a = ammo.getOrDefault(id, MAG_SIZE + 1);
         if (a <= 0) return;
@@ -582,6 +666,14 @@ public final class A extends JavaPlugin implements Listener, CommandExecutor {
 
         UUID id = p.getUniqueId();
 
+        String modeText;
+
+        if (gameMode.equals("classic")) {
+            modeText = "§aCLASSIC";
+        } else {
+            modeText = "§cTIME: " + timeRemaining + "s";
+        }
+
         p.sendActionBar(
                 "§aScore: §6" + score.getOrDefault(id, 0)
                         + " §7| §eAmmo: " + ammo.getOrDefault(id, MAG_SIZE + 1)
@@ -590,6 +682,7 @@ public final class A extends JavaPlugin implements Listener, CommandExecutor {
                         + (reloading.getOrDefault(id, false) ? " §6RELOAD" : "")
                         + " §7| §6LV: " + targetLevel
                         + " §7| §cHP: " + targetHp + "/" + targetMaxHp
+                        + " §7| " + modeText
         );
     }
     @EventHandler
@@ -624,6 +717,75 @@ public final class A extends JavaPlugin implements Listener, CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+
+
+        if (command.getName().equalsIgnoreCase("mode")) {
+
+            if (args.length != 1) {
+                sender.sendMessage(
+                        "§c使い方: /mode <classic|time>"
+                );
+                return true;
+            }
+
+            String mode = args[0].toLowerCase();
+
+            if (!mode.equals("classic") &&
+                    !mode.equals("time")) {
+
+                sender.sendMessage(
+                        "§cモードは classic / time から選択してください"
+                );
+                return true;
+            }
+
+            gameMode = mode;
+            gameRunning = true;
+
+            if (mode.equals("time")) {
+                timeRemaining = 60;
+            }
+
+            sender.sendMessage(
+                    "§aゲームモードを §e" + mode + "§a に変更しました"
+            );
+
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                updateUI(p);
+            }
+
+            return true;
+        }
+
+        if (command.getName().equalsIgnoreCase("move")) {
+
+            if (args.length != 1) {
+                sender.sendMessage(
+                        "§c使い方: /move <left_right|up_down|circle|random|stop>"
+                );
+                return true;
+            }
+
+            String pattern = args[0].toLowerCase();
+
+            if (!pattern.equals("left_right") &&
+                    !pattern.equals("up_down") &&
+                    !pattern.equals("circle") &&
+                    !pattern.equals("random") &&
+                    !pattern.equals("stop")) {
+
+                sender.sendMessage("§cその移動パターンは存在しません");
+                return true;
+            }
+
+            movePattern = pattern;
+
+            sender.sendMessage(
+                    "§a移動パターンを §e" + pattern + "§a に変更しました"
+            );
+
+            return true;
+        }
 
         if (command.getName().equalsIgnoreCase("delete")) {
 
@@ -709,6 +871,111 @@ public final class A extends JavaPlugin implements Listener, CommandExecutor {
         }
 
         return false;
+    }
+
+    @Override
+    public List<String> onTabComplete(
+            CommandSender sender,
+            Command command,
+            String alias,
+            String[] args) {
+
+        // =========================
+        // /move
+        // =========================
+        if (command.getName().equalsIgnoreCase("move")) {
+
+            if (args.length == 1) {
+
+                List<String> patterns = Arrays.asList(
+                        "left_right",
+                        "up_down",
+                        "circle",
+                        "random",
+                        "stop"
+                );
+
+                return filterTabComplete(patterns, args[0]);
+            }
+
+            return Collections.emptyList();
+        }
+
+
+        // =========================
+        // /mode
+        // =========================
+        if (command.getName().equalsIgnoreCase("mode")) {
+
+            if (args.length == 1) {
+
+                List<String> modes = Arrays.asList(
+                        "classic",
+                        "time"
+                );
+
+                return filterTabComplete(modes, args[0]);
+            }
+
+            return Collections.emptyList();
+        }
+
+
+        // =========================
+        // /spawn
+        // =========================
+        if (command.getName().equalsIgnoreCase("spawn")) {
+
+            if (args.length == 1) {
+
+                List<String> targets = Arrays.asList(
+                        "target"
+                );
+
+                return filterTabComplete(targets, args[0]);
+            }
+
+            return Collections.emptyList();
+        }
+
+
+        // =========================
+        // /delete
+        // =========================
+        if (command.getName().equalsIgnoreCase("delete")) {
+
+            if (args.length == 1) {
+
+                List<String> targets = Arrays.asList(
+                        "target"
+                );
+
+                return filterTabComplete(targets, args[0]);
+            }
+
+            return Collections.emptyList();
+        }
+
+
+        return Collections.emptyList();
+    }
+
+    private List<String> filterTabComplete(
+            List<String> options,
+            String input) {
+
+        List<String> result = new ArrayList<>();
+
+        String lowerInput = input.toLowerCase();
+
+        for (String option : options) {
+
+            if (option.toLowerCase().startsWith(lowerInput)) {
+                result.add(option);
+            }
+        }
+
+        return result;
     }
 
 }
