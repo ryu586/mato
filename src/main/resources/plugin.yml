@@ -1,6 +1,6 @@
-name: a
+name: Fps
 version: '1.0-SNAPSHOT'
-main: org.fc.a.A
+main: io.github.ryu586.fps.Fps
 api-version: '1.21'
 
 commands:
