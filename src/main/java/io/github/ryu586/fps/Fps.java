@@ -1,7 +1,6 @@
 package io.github.ryu586.fps;
 
 import org.bukkit.command.TabCompleter;
-
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.*;
@@ -15,19 +14,26 @@ import org.bukkit.plugin.java.JavaPlugin;import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
-
 import java.util.*;
-
 import net.kyori.adventure.text.Component;
-
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 
-import org.bukkit.event.entity.CreatureSpawnEvent;
-import org.bukkit.event.entity.EntitySpawnEvent;
-
 public final class Fps extends JavaPlugin implements Listener, CommandExecutor, TabCompleter {
+
+
+
+    private double randomX = 1.0;
+    private double randomY = 1.0;
+    private double randomZ = 1.0;
+    private long randomLastChange = -100;
+
+    private double randomTargetX = 0;
+    private double randomTargetY = 0;
+    private double randomTargetZ = 0;
+
+    private boolean randomTargetInitialized = false;
 
     // ===== Target =====
     private BlockDisplay display;
@@ -136,6 +142,12 @@ public final class Fps extends JavaPlugin implements Listener, CommandExecutor, 
         new BukkitRunnable() {
             double t = 0;
 
+            private double randomX = 1.0;
+            private double randomY = 1.0;
+            private double randomZ = 1.0;
+            private int randomCounter = 0;
+            private double randomRange = 4.5;
+
             @Override
             public void run() {
                 if (!targetAlive) return;
@@ -162,9 +174,16 @@ public final class Fps extends JavaPlugin implements Listener, CommandExecutor, 
                         break;
 
                     case "random":
-                        x += Math.sin(t * 1.7) * 3.0;
-                        y += Math.sin(t * 2.3) * 1.5;
-                        z += Math.cos(t * 1.3) * 2.0;
+                        randomCounter++;
+
+                        if (randomCounter >= 100) {
+                            randomRange = 2.5 + Math.random() * 0.5;
+                            randomCounter = 0;
+                        }
+
+                        x += Math.sin(t * 1.7) * randomRange;
+                        y += Math.sin(t * 2.3) * randomRange;
+                        z += Math.cos(t * 1.3) * randomRange;
                         break;
 
                     case "stop":
