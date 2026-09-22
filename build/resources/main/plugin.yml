@@ -6,15 +6,14 @@ api-version: '1.21'
 commands:
   lv:
     description: Set target level
-
   spawn:
     description: Spawn target
-
   delete:
     description: Delete target
-
   move:
-    description: Change target movement pattern
-
+    description: Move target
   mode:
     description: Change game mode
+  targetname:
+    description: 現在出ているターゲットの名前一覧を表示
+    usage: /targetname
