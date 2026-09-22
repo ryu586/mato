@@ -268,4 +268,4 @@ stop
 
 https://youtu.be/kxJ1gUecgjI
 
-※ア
+※アップデート後の動画は取ってません結構初期の動画になってます
